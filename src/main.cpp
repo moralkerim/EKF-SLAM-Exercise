@@ -34,8 +34,8 @@
 
 
 //EKF Noise parameters
-float r_d = 0.1;
-float r_a = 0.01;
+float r_d = 0.001;
+float r_a = 0.001;
 
 float q_x = 0.5;
 float q_y = 0.5;
@@ -46,7 +46,7 @@ Eigen::Matrix2f R({{r_d*r_d, 0.0f}, {0.0f, r_a*r_a}}); //Measurement Noise
 Eigen::Matrix3f Q({{q_x*q_x, 0.0f, 0.0f}, {0.0f, q_y*q_y, 0.0f}, {0.0f, 0.0f, q_t*q_t}}); //Process Noise
 
 Eigen::Matrix3f P0({{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}); //Initial Cov. Matrix
-Eigen::Vector3f X0({0.0f, 0.0f, 0.0f}); //Initial pose
+Eigen::Vector3f X0 = Eigen::VectorXf::Zero(3); //Initial pose zero
 
 //Create a shared logger file for both Robot and EKF
 auto logger = std::make_shared<Logger>("poses.txt");
@@ -81,9 +81,9 @@ int main() {
 
     // Landmarks as unordered maps
     std::unordered_map<int, std::shared_ptr<Landmark>> landmarks;
-    landmarks.emplace(1, std::make_shared<Landmark>(1,  5.0f,  5.0f));
-    landmarks.emplace(2, std::make_shared<Landmark>(2,  6.0f,  8.0f));
-    landmarks.emplace(3, std::make_shared<Landmark>(3,  7.0f,  12.0f));
+    landmarks.emplace(0, std::make_shared<Landmark>(0,  5.0f,  5.0f));
+    landmarks.emplace(1, std::make_shared<Landmark>(1,  6.0f,  8.0f));
+    landmarks.emplace(2, std::make_shared<Landmark>(2,  7.0f,  12.0f));
 
 
     double total_time = 5.0;
@@ -102,7 +102,7 @@ int main() {
         robot.move(v, w); //Move and take samples
         std::cout << "\nt=" << t + dt << std::endl;
         robot.print();
-        ekf.predict(ekf.X, U); //EKF Prediction step.
+        ekf.predict(U); //EKF Prediction step.
         auto measurements = robot.senseLandmarks(landmarks); //Take measurements
         //Check if we have a measurement
         if(!measurements.empty()) {
@@ -110,7 +110,19 @@ int main() {
             for(auto& z : measurements) {
                 auto lm = FindAssociation(z,landmarks);
                 if(lm) {
-                    ekf.update(z,lm);
+                  //Check if we registered a landmark
+                  bool ekf_init = true;
+                  for(auto& id : ekf.landmark_list) {
+                    if(lm->id == id) {
+                        //Update EKF according to id
+                        ekf.update(z,lm->id);
+                        ekf_init = false;
+                    }
+                  }
+                  if(ekf_init) {
+                    std::cout << "Initilazing landmark..." << std::endl;
+                    ekf.initLandmark(z,lm->id);
+                  }
                 }
             }
 

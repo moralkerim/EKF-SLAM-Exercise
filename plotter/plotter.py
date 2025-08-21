@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 
 # Dosyayı oku
-data = {"Gaussian": [], "Actual": [], "Prediction": [], "Update": [], "Landmark": []}
+data = {"Gaussian": [], "Actual": [], "Prediction": [], "Update": [], "Landmark": [], "Landmark EKF": []}
 
 with open("poses.txt") as f:
     for line in f:
