@@ -47,9 +47,9 @@ class EKF {
 
         void initLandmark(Measurement& Z, int& id);
 
-        void predict(Eigen::Vector2f& U);
+        void predict(Eigen::Vector2f& U, double t);
 
-        void update(const Measurement& Z, const int& id);
+        void update(const Measurement& Z, const int& id, double t);
 
     private:
         Eigen::Matrix3f F;

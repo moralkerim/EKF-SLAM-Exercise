@@ -39,18 +39,20 @@ struct Position {
 class Logger {
 public:
     Logger(const std::string& filename) 
-        : file(filename) 
+        : file(filename)
     {
         if (!file.is_open()) {
             throw std::runtime_error("Could not open log file!");
         }
     }
 
-    void logPosition(const std::string& label, const Position& pos) {
+    void logPosition(const std::string& label, const Position& pos, double t) {
         file << label << ", "
              << pos.x << ", "
              << pos.y << ", "
-             << pos.theta << "\n";
+             << pos.theta << ", "
+             << t << "\n";
+
     }
 
 private:
@@ -72,7 +74,7 @@ public:
       bear_noise(0.0, r_a),   // 1 degree ≈ 0.017 rad
       logger(logger_)
     {}
-    void move(double distance, double angle);
+    void move(double distance, double angle, double t);
 
     void print() const;
 

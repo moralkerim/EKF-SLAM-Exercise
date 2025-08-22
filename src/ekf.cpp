@@ -50,24 +50,24 @@ void EKF::initLandmark(Measurement& Z, int& id)
     Eigen::MatrixXf newP(new_size, new_size);
     newP.setZero();
     newP.topLeftCorner(old_size, old_size) = P;
-    newP.bottomRightCorner(2, 2) = Eigen::Matrix2f::Identity() * 100.0f;
+    newP.bottomRightCorner(2, 2) = Eigen::Matrix2f::Identity() * 99999.0f;
     P = newP;
 
     Eigen::MatrixXf newP_hat(new_size, new_size);
     newP_hat.setZero();
     newP_hat.topLeftCorner(old_size, old_size) = P_hat;
-    newP_hat.bottomRightCorner(2, 2) = Eigen::Matrix2f::Identity() * 100.0f;
+    newP_hat.bottomRightCorner(2, 2) = Eigen::Matrix2f::Identity() * 99999.0f;
     P_hat = newP_hat;
 }
 
-void EKF::predict(Eigen::Vector2f &U)
+void EKF::predict(Eigen::Vector2f &U, double t)
 {
-    float &x_prev = X(0);
-    float &y_prev = X(1);
-    float &theta_prev = X(2);
+    float& x_prev = X(0);
+    float& y_prev = X(1);
+    float& theta_prev = X(2);
 
-    float &v = U(0);
-    float &w = U(1);
+    float& v = U(0);
+    float& w = U(1);
 
     F << 1, 0, -v * sin(theta_prev),
         0, 1, v * cos(theta_prev),
@@ -107,15 +107,17 @@ void EKF::predict(Eigen::Vector2f &U)
 
     std::cout << "EKF prediction: " << std::endl;
     std::cout << "x: " << X_hat(0) << " y: " << X_hat(1) << " Thet: " << X_hat(2) << std::endl;
-    logger->logPosition("Prediction", Position(X_hat(0), X_hat(1), X_hat(2)));
+    logger->logPosition("Prediction", Position(X_hat(0), X_hat(1), X_hat(2)),t);
+
+    //Make X equal to X_hat, for no update situations
+    X = X_hat;
+    P = P_hat;
 }
 
-void EKF::update(const Measurement& Z, const int& id)
+void EKF::update(const Measurement& Z, const int& id, double t)
 {
 
-    Eigen::Vector2f Z_vec;
-    Z_vec(0) = Z.range;
-    Z_vec(1) = Z.bearing;
+    Eigen::Vector2f Z_vec(Z.range, Z.bearing);
 
     float& x = X_hat(0);
     float& y = X_hat(1);
@@ -132,7 +134,7 @@ void EKF::update(const Measurement& Z, const int& id)
     const int id_pos = 3 + 2*id;
 
     float& lm_x = X(id_pos);
-    float& lm_y = X(id_pos);
+    float& lm_y = X(id_pos + 1);
 
     float dx = lm_x - x;
     float dy = lm_y - y;
@@ -143,10 +145,8 @@ void EKF::update(const Measurement& Z, const int& id)
     float bearing = std::atan2(dy, dx) - theta;
 
     // Normalize bearing to [-pi, pi]
-    if (bearing > M_PI)
-        bearing -= 2 * M_PI;
-    if (bearing < -M_PI)
-        bearing += 2 * M_PI;
+    while (bearing > M_PI) bearing -= 2 * M_PI;
+    while (bearing < -M_PI) bearing += 2 * M_PI;
 
     const int state_dim = 3 + 2*landmark_list.size();
 
@@ -193,9 +193,12 @@ void EKF::update(const Measurement& Z, const int& id)
 
     std::cout << "EKF update: " << std::endl;
     std::cout << "x: " << X(0) << " y: " << X(1) << " Thet: " << X(2) << std::endl;
-    logger->logPosition("Update", Position(X(0), X(1), X(2)));
+    logger->logPosition("Update", Position(X(0), X(1), X(2)),t);
 
     std::cout << "EKF landmark: " << std::endl;
     std::cout << "mx: " << X(id_pos) << " my: " << X(id_pos+1) << std::endl;
-    logger->logPosition("Landmark EKF", Position(X(id_pos), X(id_pos+1), 0));
+    logger->logPosition("Landmark EKF", Position(X(id_pos), X(id_pos+1), 0),t);
+
+    X_hat = X;
+    P_hat = P;
 }

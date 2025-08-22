@@ -48,6 +48,12 @@ Eigen::Matrix3f Q({{q_x*q_x, 0.0f, 0.0f}, {0.0f, q_y*q_y, 0.0f}, {0.0f, 0.0f, q_
 Eigen::Matrix3f P0({{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}}); //Initial Cov. Matrix
 Eigen::Vector3f X0 = Eigen::VectorXf::Zero(3); //Initial pose zero
 
+double dt = 1.0;
+double v = 2.0;    // Linear speed
+double r = 8.0;    // Robot turn radius
+double w = v/r;    // Angular speed
+double total_time = 2*M_PI/w;
+
 //Create a shared logger file for both Robot and EKF
 auto logger = std::make_shared<Logger>("poses.txt");
 
@@ -81,15 +87,11 @@ int main() {
 
     // Landmarks as unordered maps
     std::unordered_map<int, std::shared_ptr<Landmark>> landmarks;
-    landmarks.emplace(0, std::make_shared<Landmark>(0,  5.0f,  5.0f));
-    landmarks.emplace(1, std::make_shared<Landmark>(1,  6.0f,  8.0f));
-    landmarks.emplace(2, std::make_shared<Landmark>(2,  7.0f,  12.0f));
+    landmarks.emplace(0, std::make_shared<Landmark>(0,   5.0f,  5.0f));
+    landmarks.emplace(1, std::make_shared<Landmark>(1,   6.0f,  8.0f));
+    landmarks.emplace(2, std::make_shared<Landmark>(2,   7.0f,  12.0f));
+    landmarks.emplace(3, std::make_shared<Landmark>(3,  -2.0f,  12.0f));
 
-
-    double total_time = 5.0;
-    double dt = 1.0;
-    double v = 3.0;    // Linear speed
-    double w = 0.3;    // Angular speed
 
     std::cout << "Starting Position:\n";
     robot.print();
@@ -99,10 +101,10 @@ int main() {
 
     //Run for total time with dt steps
     for (double t = 0; t < total_time; t += dt) {
-        robot.move(v, w); //Move and take samples
+        robot.move(v, w,t); //Move and take samples
         std::cout << "\nt=" << t + dt << std::endl;
         robot.print();
-        ekf.predict(U); //EKF Prediction step.
+        ekf.predict(U,t); //EKF Prediction step.
         auto measurements = robot.senseLandmarks(landmarks); //Take measurements
         //Check if we have a measurement
         if(!measurements.empty()) {
@@ -115,7 +117,7 @@ int main() {
                   for(auto& id : ekf.landmark_list) {
                     if(lm->id == id) {
                         //Update EKF according to id
-                        ekf.update(z,lm->id);
+                        ekf.update(z,lm->id,t);
                         ekf_init = false;
                     }
                   }
@@ -132,7 +134,7 @@ int main() {
 
     //Put Landmarks to the log
     for(const auto& [id,lm] : landmarks) {
-        logger->logPosition("Landmark",Position(lm->x,lm->y,0));
+        logger->logPosition("Landmark",Position(lm->x,lm->y,0),0);
     }
 
     return 0;
