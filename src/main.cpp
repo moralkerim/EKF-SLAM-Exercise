@@ -134,7 +134,7 @@ int main() {
 
     //Put Landmarks to the log
     for(const auto& [id,lm] : landmarks) {
-        logger->logPosition("Landmark",Position(lm->x,lm->y,0),0);
+        logger->logPosition("Landmark",Position(lm->x,lm->y,0),0,std::vector<float>{(0.0,0.0,0.0)});
     }
 
     return 0;

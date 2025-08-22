@@ -46,12 +46,15 @@ public:
         }
     }
 
-    void logPosition(const std::string& label, const Position& pos, double t) {
+    void logPosition(const std::string& label, const Position& pos, double t, std::vector<float> s) {
         file << label << ", "
              << pos.x << ", "
              << pos.y << ", "
              << pos.theta << ", "
-             << t << "\n";
+             << t << ", "
+             << s[0] << ", "
+             << s[1] << ", "
+             << s[2] << "\n ";
 
     }
 

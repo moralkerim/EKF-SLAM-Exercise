@@ -16,7 +16,7 @@ void Robot::move(double distance, double angle,double t) {
         pos.theta = pos_sample.theta;
         pos.x = pos_sample.x;
         pos.y = pos_sample.y;
-        logger->logPosition("Actual",pos,t);
+        logger->logPosition("Actual",pos,t, std::vector<float>{(0.0,0.0,0.0)});
 }
 
 void Robot::print() const {

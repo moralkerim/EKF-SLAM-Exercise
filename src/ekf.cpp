@@ -105,9 +105,14 @@ void EKF::predict(Eigen::Vector2f &U, double t)
     P_hat.bottomLeftCorner(M_size,R_size) =  P_mr_hat;
     P_hat.bottomRightCorner(M_size,M_size) =  P_mm_hat;
 
+    std::vector<float> s;
+    s.emplace_back(P_hat(0,0));
+    s.emplace_back(P_hat(1,1));
+    s.emplace_back(P_hat(0,1));
+
     std::cout << "EKF prediction: " << std::endl;
     std::cout << "x: " << X_hat(0) << " y: " << X_hat(1) << " Thet: " << X_hat(2) << std::endl;
-    logger->logPosition("Prediction", Position(X_hat(0), X_hat(1), X_hat(2)),t);
+    logger->logPosition("Prediction", Position(X_hat(0), X_hat(1), X_hat(2)),t,s);
 
     //Make X equal to X_hat, for no update situations
     X = X_hat;
@@ -191,13 +196,18 @@ void EKF::update(const Measurement& Z, const int& id, double t)
     X = X_hat + Kt * (Z_vec - Z_hat);
     P = P_hat - Kt * S_in * Kt.transpose();
 
+    std::vector<float> s;
+    s.emplace_back(P(0,0));
+    s.emplace_back(P(1,1));
+    s.emplace_back(P(0,1));
+
     std::cout << "EKF update: " << std::endl;
     std::cout << "x: " << X(0) << " y: " << X(1) << " Thet: " << X(2) << std::endl;
-    logger->logPosition("Update", Position(X(0), X(1), X(2)),t);
+    logger->logPosition("Update", Position(X(0), X(1), X(2)),t,s);
 
     std::cout << "EKF landmark: " << std::endl;
     std::cout << "mx: " << X(id_pos) << " my: " << X(id_pos+1) << std::endl;
-    logger->logPosition("Landmark EKF", Position(X(id_pos), X(id_pos+1), 0),t);
+    logger->logPosition("Landmark EKF", Position(X(id_pos), X(id_pos+1), 0),t,std::vector<float>{(0.0,0.0,0.0)});
 
     X_hat = X;
     P_hat = P;
