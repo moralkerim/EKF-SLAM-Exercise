@@ -55,7 +55,7 @@ ax.set_ylim(min(v[1] for values in data.values() for v in values)-1,
             max(v[1] for values in data.values() for v in values)+1)
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
-ax.set_title("EKF Logging - Zamanla")
+ax.set_title("EKF Logging - Animation")
 ax.grid(True)
 
 scatters = {label: ax.scatter([], [], marker="o", label=label) for label in data}

@@ -196,10 +196,14 @@ void EKF::update(const Measurement& Z, const int& id, double t)
     X = X_hat + Kt * (Z_vec - Z_hat);
     P = P_hat - Kt * S_in * Kt.transpose();
 
-    std::vector<float> s;
+    std::vector<float> s, sm;
     s.emplace_back(P(0,0));
     s.emplace_back(P(1,1));
     s.emplace_back(P(0,1));
+
+    sm.emplace_back(P(id_pos,id_pos));
+    sm.emplace_back(P(id_pos+1,id_pos+1));
+    sm.emplace_back(P(id_pos,id_pos+1));
 
     std::cout << "EKF update: " << std::endl;
     std::cout << "x: " << X(0) << " y: " << X(1) << " Thet: " << X(2) << std::endl;
@@ -207,7 +211,7 @@ void EKF::update(const Measurement& Z, const int& id, double t)
 
     std::cout << "EKF landmark: " << std::endl;
     std::cout << "mx: " << X(id_pos) << " my: " << X(id_pos+1) << std::endl;
-    logger->logPosition("Landmark EKF", Position(X(id_pos), X(id_pos+1), 0),t,std::vector<float>{(0.0,0.0,0.0)});
+    logger->logPosition("Landmark EKF", Position(X(id_pos), X(id_pos+1), 0),t,sm);
 
     X_hat = X;
     P_hat = P;
